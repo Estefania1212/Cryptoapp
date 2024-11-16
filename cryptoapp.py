@@ -28,7 +28,7 @@ def load_data(currency):
         "UNI3-USD", "AAVE-USD", "VET-USD", "ATOM1-USD", "XMR-USD",
         "TRX-USD", "EOS-USD", "FIL-USD", "XTZ-USD", "SOL1-USD"
     ]  # Add more symbols as needed
-    data = yf.download(symbols, start="2010-01-01", end=pd.Timestamp.today())
+    data = yf.download(symbols, start="2020-01-01", end=pd.Timestamp.today())
 
     # Filter necessary columns
     df = data["Adj Close"].reset_index()
