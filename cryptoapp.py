@@ -6,34 +6,40 @@ import time
 import pandas as pd
 import requests
 
+from forex_python.converter import CurrencyRates
+import time
+import streamlit as st
+
 # Function to fetch exchange rate with retries
 def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
     c = CurrencyRates()
     attempt = 0
     
+    # Try fetching exchange rate with retries
     while attempt < retries:
         try:
-            # Try fetching the exchange rate
+            # Attempt to get the exchange rate
             rate = c.get_rate(base_currency, target_currency)
             return rate
-        except requests.exceptions.RequestException as req_err:
-            # Handle network-related errors
-            attempt += 1
-            st.warning(f"Network error (Attempt {attempt}): {req_err}. Retrying in {delay} seconds...")
         except Exception as e:
-            # Handle other types of errors
+            # Handle exceptions, display a warning, and retry
             attempt += 1
-            if "Currency Rates Source Not Ready" in str(e):
-                st.warning(f"Currency Rates Source Not Ready (Attempt {attempt}). Retrying in {delay} seconds...")
+            error_message = str(e)
+            if "Currency Rates Source Not Ready" in error_message:
+                st.warning(f"Currency Rates source not ready (Attempt {attempt}). Retrying in {delay} seconds...")
             else:
-                st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
+                st.warning(f"Error fetching exchange rate (Attempt {attempt}): {error_message}. Retrying in {delay} seconds...")
         
         # Wait before retrying
         time.sleep(delay)
 
-    # If the function fails after the retries
-    st.error(f"Failed to fetch exchange rate after {retries} attempts.")
-    return None
+    # If the function fails after all retries, log an error and return a fallback rate (1)
+    st.error(f"Failed to fetch exchange rate after {retries} attempts. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+    return 1  # Default to 1 if fetching fails (you can set this to another default value if needed)
+
+
+
+
 
 # Function to load cryptocurrency data and convert to selected currency
 def load_data(currency):
