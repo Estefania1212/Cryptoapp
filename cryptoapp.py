@@ -29,11 +29,11 @@ def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, de
             data = response.json()
             
             # Check if the request was successful
-            if data['response']['status'] == 'success':
+            if response.status_code == 200 and data.get('response') and data['response'].get('status') == 'success':
                 rate = data['response']['rates'][f"{base_currency}{target_currency}"]['rate']
                 return rate
             else:
-                raise Exception("Error in API response")
+                raise Exception("Error in API response or invalid data")
         except Exception as e:
             # Handle exceptions, display a warning, and retry
             attempt += 1
@@ -65,18 +65,16 @@ def load_data(currency):
 
     # Fetch exchange rate with retries for the selected currency
     rate = get_exchange_rate_with_retries("USD", currency)
-    if rate is None:
+    if rate == 1:
         st.warning(f"Could not fetch rate for {currency}. Defaulting to 1 USD = 1 {currency}.")
-        rate = 1  # Default to 1 if conversion fails
-
+    
     # Convert prices to the desired currency
     for symbol in symbols:
         try:
             df[symbol] = df[symbol] * rate
         except Exception as e:
             st.warning(f"Error converting {symbol} to {currency}: {e}")
-            # Keep original values if conversion fails
-            df[symbol] = df[symbol]
+            df[symbol] = df[symbol]  # Keep original values if conversion fails
             
     return df
 
@@ -168,3 +166,4 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
