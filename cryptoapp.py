@@ -8,29 +8,6 @@ import pandas as pd
 import streamlit as st
 from forex_python.converter import CurrencyRates
 
-def get_exchange_rate():
-    c = CurrencyRates()
-    try:
-        rate = c.get_rate('USD', 'EUR')
-        return rate
-    except Exception as e:
-        st.error(f"Error fetching exchange rate: {e}")
-        return None
-
-# Streamlit app
-def main():
-    st.title("Currency Exchange Rate Test")
-
-    if st.button("Get USD to EUR Rate"):
-        rate = get_exchange_rate()
-        if rate:
-            st.success(f"Exchange rate from USD to EUR: {rate}")
-        else:
-            st.error("Failed to fetch the exchange rate.")
-
-if __name__ == "__main__":
-    main()
-
 
 
 # Function to fetch exchange rate with retries
