@@ -6,29 +6,39 @@ import time
 import pandas as pd
 import requests
 
-from forex_python.converter import CurrencyRates
-import time
+import yfinance as yf
 import streamlit as st
+import matplotlib.pyplot as plt
+import time
+import pandas as pd
+import requests
 
-# Function to fetch exchange rate with retries
+# Function to fetch exchange rate from Free Forex API with retries
 def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
-    c = CurrencyRates()
     attempt = 0
+    api_url = f"https://www.freeforexapi.com/api/live"
+    params = {
+        'pairs': f"{base_currency}{target_currency}"
+    }
     
     # Try fetching exchange rate with retries
     while attempt < retries:
         try:
-            # Attempt to get the exchange rate
-            rate = c.get_rate(base_currency, target_currency)
-            return rate
+            # Send request to Free Forex API
+            response = requests.get(api_url, params=params)
+            data = response.json()
+            
+            # Check if the request was successful
+            if data['response']['status'] == 'success':
+                rate = data['response']['rates'][f"{base_currency}{target_currency}"]['rate']
+                return rate
+            else:
+                raise Exception("Error in API response")
         except Exception as e:
             # Handle exceptions, display a warning, and retry
             attempt += 1
             error_message = str(e)
-            if "Currency Rates Source Not Ready" in error_message:
-                st.warning(f"Currency Rates source not ready (Attempt {attempt}). Retrying in {delay} seconds...")
-            else:
-                st.warning(f"Error fetching exchange rate (Attempt {attempt}): {error_message}. Retrying in {delay} seconds...")
+            st.warning(f"Error fetching exchange rate (Attempt {attempt}): {error_message}. Retrying in {delay} seconds...")
         
         # Wait before retrying
         time.sleep(delay)
@@ -36,10 +46,6 @@ def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, de
     # If the function fails after all retries, log an error and return a fallback rate (1)
     st.error(f"Failed to fetch exchange rate after {retries} attempts. Defaulting to 1 {target_currency} = 1 {base_currency}.")
     return 1  # Default to 1 if fetching fails (you can set this to another default value if needed)
-
-
-
-
 
 # Function to load cryptocurrency data and convert to selected currency
 def load_data(currency):
@@ -74,7 +80,7 @@ def load_data(currency):
             
     return df
 
-# Portfolio management functionality
+# Portfolio management functionality (unchanged)
 def portfolio_management(df, portfolio, currency):
     st.sidebar.subheader("Portfolio Management")
 
@@ -107,17 +113,16 @@ def portfolio_management(df, portfolio, currency):
     # Calculate portfolio value
     st.sidebar.subheader("Portfolio Value")
     portfolio_value = 0
-    c = CurrencyRates()
     for coin in portfolio:
         for transaction in portfolio[coin]:
-            price_in_currency = transaction["Price"] * c.get_rate("USD", currency)
+            price_in_currency = transaction["Price"] * get_exchange_rate_with_retries("USD", currency)
             portfolio_value += transaction["Quantity"] * price_in_currency
 
     st.sidebar.info(f"Portfolio Value: {portfolio_value} {currency}")
 
     return portfolio
 
-# Streamlit app
+# Streamlit app (unchanged)
 def main():
     st.title("Cryptocurrency Price Data")
     st.sidebar.header("Inputs")
