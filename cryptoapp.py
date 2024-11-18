@@ -1,24 +1,11 @@
+
 import yfinance as yf 
 import streamlit as st
-from PIL import Image
-import pandas as pd
-import base64
-import matplotlib.pyplot as plt 
-import seaborn as sns
-import numpy as np 
-from bs4 import BeautifulSoup
-import requests
-import json 
-import time 
-from urllib.request import urlopen
-from datetime import date 
-
-
 from forex_python.converter import CurrencyRates
 import pandas as pd
-import streamlit as st
 import matplotlib.pyplot as plt
-import yfinance as yf
+import time
+
 
 def load_data(currency):
     symbols = [
@@ -27,30 +14,35 @@ def load_data(currency):
         "UNI3-USD", "AAVE-USD", "VET-USD", "ATOM1-USD", "XMR-USD",
         "TRX-USD", "EOS-USD", "FIL-USD", "XTZ-USD", "SOL1-USD"
     ]
+    
+    # Download data from Yahoo Finance
     data = yf.download(symbols, start="2020-01-01", end=pd.Timestamp.today())
 
+    # Extract adjusted close prices
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
 
+    # Initialize currency converter
     c = CurrencyRates()
+    
+    # Try fetching the exchange rate just once
+    try:
+        rate = c.get_rate("USD", currency)
+        st.info(f"Exchange rate from USD to {currency}: {rate}")
+    except Exception as e:
+        st.warning(f"Error fetching exchange rate for {currency}: {e}")
+        rate = 1  # Default to 1 if conversion fails, keeping prices in USD
+
+    # Convert prices to the desired currency (or keep in USD if error)
     for symbol in symbols:
         try:
-            rate = c.get_rate("USD", currency)
             df[symbol] = df[symbol] * rate
         except Exception as e:
-            st.warning(f"Error fetching rate for {symbol} with currency {currency}: {e}")
-            # Debugging: print the raw response
-            try:
-                response = c.get_rate("USD", currency)
-                print(f"Raw response for {currency}: {response}")
-            except Exception as api_error:
-                print(f"Error while fetching response for {currency}: {api_error}")
+            st.warning(f"Error converting {symbol} to {currency}: {e}")
             # Keep original values if conversion fails
             df[symbol] = df[symbol]  
             
     return df
-
-
 
 
 # Portfolio management functionality
@@ -89,12 +81,17 @@ def portfolio_management(df, portfolio, currency):
     c = CurrencyRates()
     for coin in portfolio:
         for transaction in portfolio[coin]:
-            price_in_currency = transaction["Price"] * c.get_rate("USD", currency)
-            portfolio_value += transaction["Quantity"] * price_in_currency
+            try:
+                price_in_currency = transaction["Price"] * c.get_rate("USD", currency)
+                portfolio_value += transaction["Quantity"] * price_in_currency
+            except Exception as e:
+                st.warning(f"Error fetching rate for {coin} in portfolio: {e}")
+                price_in_currency = transaction["Price"]  # Default to USD if error
 
     st.sidebar.info(f"Portfolio Value: {portfolio_value} {currency}")
 
     return portfolio
+
 
 # Streamlit app
 def main():
@@ -138,6 +135,7 @@ def main():
 
     # Add portfolio management functionality
     portfolio = portfolio_management(df_display, portfolio, currency)
+
 
 # Run the Streamlit app
 if __name__ == "__main__":
