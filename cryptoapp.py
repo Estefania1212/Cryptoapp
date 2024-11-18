@@ -1,12 +1,26 @@
-
-import yfinance as yf 
+import yfinance as yf
 import streamlit as st
 from forex_python.converter import CurrencyRates
-import pandas as pd
 import matplotlib.pyplot as plt
 import time
+import pandas as pd
 
+# Function to fetch exchange rate with retries
+def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
+    c = CurrencyRates()
+    attempt = 0
+    while attempt < retries:
+        try:
+            rate = c.get_rate(base_currency, target_currency)
+            return rate
+        except Exception as e:
+            attempt += 1
+            st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
+            time.sleep(delay)
+    st.error(f"Failed to fetch exchange rate after {retries} attempts.")
+    return None
 
+# Function to load cryptocurrency data and convert to selected currency
 def load_data(currency):
     symbols = [
         "BTC-USD", "ETH-USD", "XRP-USD", "LTC-USD", "BCH-USD", 
@@ -22,28 +36,21 @@ def load_data(currency):
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
 
-    # Initialize currency converter
-    c = CurrencyRates()
-    
-    # Try fetching the exchange rate just once
-    try:
-        rate = c.get_rate("USD", currency)
-        st.info(f"Exchange rate from USD to {currency}: {rate}")
-    except Exception as e:
-        st.warning(f"Error fetching exchange rate for {currency}: {e}")
-        rate = 1  # Default to 1 if conversion fails, keeping prices in USD
+    # Fetch exchange rate with retries
+    rate = get_exchange_rate_with_retries("USD", currency)
+    if rate is None:
+        rate = 1  # Default to 1 if conversion fails
 
-    # Convert prices to the desired currency (or keep in USD if error)
+    # Convert prices to the desired currency
     for symbol in symbols:
         try:
             df[symbol] = df[symbol] * rate
         except Exception as e:
             st.warning(f"Error converting {symbol} to {currency}: {e}")
             # Keep original values if conversion fails
-            df[symbol] = df[symbol]  
+            df[symbol] = df[symbol]
             
     return df
-
 
 # Portfolio management functionality
 def portfolio_management(df, portfolio, currency):
@@ -81,17 +88,12 @@ def portfolio_management(df, portfolio, currency):
     c = CurrencyRates()
     for coin in portfolio:
         for transaction in portfolio[coin]:
-            try:
-                price_in_currency = transaction["Price"] * c.get_rate("USD", currency)
-                portfolio_value += transaction["Quantity"] * price_in_currency
-            except Exception as e:
-                st.warning(f"Error fetching rate for {coin} in portfolio: {e}")
-                price_in_currency = transaction["Price"]  # Default to USD if error
+            price_in_currency = transaction["Price"] * c.get_rate("USD", currency)
+            portfolio_value += transaction["Quantity"] * price_in_currency
 
     st.sidebar.info(f"Portfolio Value: {portfolio_value} {currency}")
 
     return portfolio
-
 
 # Streamlit app
 def main():
@@ -136,7 +138,7 @@ def main():
     # Add portfolio management functionality
     portfolio = portfolio_management(df_display, portfolio, currency)
 
-
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
