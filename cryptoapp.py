@@ -19,6 +19,7 @@ from forex_python.converter import CurrencyRates
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+import yfinance as yf  # Ensure you import yfinance
 
 # Fetch cryptocurrency data from Yahoo Finance
 def load_data(currency):
@@ -37,9 +38,16 @@ def load_data(currency):
     # Convert prices to the desired currency
     c = CurrencyRates()
     for symbol in symbols:
-        df[symbol] = df[symbol] * c.get_rate("USD", currency)
+        try:
+            rate = c.get_rate("USD", currency)
+            df[symbol] = df[symbol] * rate
+        except Exception as e:
+            st.warning(f"Error fetching rate for {symbol} with currency {currency}: {e}")
+            # Optionally, you can set the value to NaN or keep the original value if conversion fails
+            df[symbol] = df[symbol]  # This will just keep the original USD values if conversion fails
 
     return df
+
 
 # Portfolio management functionality
 def portfolio_management(df, portfolio, currency):
