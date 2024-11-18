@@ -6,37 +6,26 @@ import time
 import pandas as pd
 import requests
 
+
 import yfinance as yf
 import streamlit as st
 import matplotlib.pyplot as plt
 import time
 import pandas as pd
-import requests
+from forex_python.converter import CurrencyRates
 
-# Function to fetch exchange rate from Free Forex API with retries
+# Initialize CurrencyRates object
+currency_rates = CurrencyRates()
+
+# Function to fetch exchange rate using forex-python
 def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
     attempt = 0
-    api_url = f"https://www.freeforexapi.com/api/live"
-    params = {
-        'pairs': f"{base_currency}{target_currency}"  # Ensure it's like USDGBP, not USD-GBP
-    }
     
     # Try fetching exchange rate with retries
     while attempt < retries:
         try:
-            # Send request to Free Forex API
-            response = requests.get(api_url, params=params)
-            data = response.json()
-            
-            # Log the full response to see what the API returns
-            st.write("API Response:", data)
-            
-            # Check if the request was successful
-            if response.status_code == 200 and data.get('response') and data['response'].get('status') == 'success':
-                rate = data['response']['rates'][f"{base_currency}{target_currency}"]['rate']
-                return rate
-            else:
-                raise Exception("Error in API response or invalid data")
+            rate = currency_rates.get_rate(base_currency, target_currency)
+            return rate
         except Exception as e:
             # Handle exceptions, display a warning, and retry
             attempt += 1
@@ -169,5 +158,6 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
