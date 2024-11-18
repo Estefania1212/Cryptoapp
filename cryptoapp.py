@@ -10,14 +10,6 @@ from forex_python.converter import CurrencyRates
 
 from forex_python.converter import CurrencyRates
 
-c = CurrencyRates()
-try:
-    # Test response from the API
-    rate = c.get_rate('USD', 'EUR')
-    print(f"Exchange rate from USD to EUR: {rate}")
-except Exception as e:
-    print(f"Error fetching exchange rate: {e}")
-
 
 
 
