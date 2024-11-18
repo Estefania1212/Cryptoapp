@@ -8,38 +8,41 @@ import pandas as pd
 import streamlit as st
 from forex_python.converter import CurrencyRates
 
+
+
+
+from forex_python.converter import CurrencyRates
+import time
+import streamlit as st
+import requests
+
 def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
     c = CurrencyRates()
     attempt = 0
+    
     while attempt < retries:
         try:
+            # Try fetching the exchange rate
             rate = c.get_rate(base_currency, target_currency)
             return rate
-        except Exception as e:
-            st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
+        except requests.exceptions.RequestException as req_err:
+            # Handle network-related errors
             attempt += 1
-            time.sleep(delay)
+            st.warning(f"Network error (Attempt {attempt}): {req_err}. Retrying in {delay} seconds...")
+        except Exception as e:
+            # Handle other types of errors
+            attempt += 1
+            st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
+        
+        # Wait before retrying
+        time.sleep(delay)
+
+    # If the function fails after the retries
     st.error(f"Failed to fetch exchange rate after {retries} attempts.")
     return None
 
 
 
-
-
-# Function to fetch exchange rate with retries
-def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
-    c = CurrencyRates()
-    attempt = 0
-    while attempt < retries:
-        try:
-            rate = c.get_rate(base_currency, target_currency)
-            return rate
-        except Exception as e:
-            attempt += 1
-            st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
-            time.sleep(delay)
-    st.error(f"Failed to fetch exchange rate after {retries} attempts.")
-    return None
 
 # Function to load cryptocurrency data and convert to selected currency
 def load_data(currency):
