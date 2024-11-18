@@ -14,11 +14,9 @@ from urllib.request import urlopen
 from datetime import date 
 
 
-
 from forex_python.converter import CurrencyRates
 import pandas as pd
 import streamlit as st
-import matplotlib.pyplot as plt
 import yfinance as yf
 
 def load_data(currency):
@@ -40,16 +38,18 @@ def load_data(currency):
             df[symbol] = df[symbol] * rate
         except Exception as e:
             st.warning(f"Error fetching rate for {symbol} with currency {currency}: {e}")
-            # Debugging: print the raw response
+            st.warning(f"Trying to fetch rate again for {currency}.")
             try:
-                response = c.get_rate("USD", currency)
-                print(f"Raw response for {currency}: {response}")
-            except Exception as api_error:
-                print(f"Error while fetching response for {currency}: {api_error}")
-            # Keep original values if conversion fails
-            df[symbol] = df[symbol]  
-            
+                # Retry fetching the rate
+                rate = c.get_rate("USD", currency)
+                df[symbol] = df[symbol] * rate
+            except Exception as retry_error:
+                st.warning(f"Failed again for {symbol} with currency {currency}: {retry_error}")
+                # Keep the original value in USD if failed
+                df[symbol] = df[symbol]
+
     return df
+
 
 
 # Portfolio management functionality
