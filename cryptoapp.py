@@ -10,7 +10,6 @@ from forex_python.converter import CurrencyRates
 
 
 
-
 from forex_python.converter import CurrencyRates
 import time
 import streamlit as st
@@ -32,7 +31,10 @@ def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, de
         except Exception as e:
             # Handle other types of errors
             attempt += 1
-            st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
+            if "Currency Rates Source Not Ready" in str(e):
+                st.warning(f"Currency Rates Source Not Ready (Attempt {attempt}). Retrying in {delay} seconds...")
+            else:
+                st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
         
         # Wait before retrying
         time.sleep(delay)
@@ -40,6 +42,7 @@ def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, de
     # If the function fails after the retries
     st.error(f"Failed to fetch exchange rate after {retries} attempts.")
     return None
+
 
 
 
