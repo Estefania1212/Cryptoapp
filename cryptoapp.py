@@ -8,19 +8,19 @@ import pandas as pd
 import streamlit as st
 from forex_python.converter import CurrencyRates
 
-from forex_python.converter import CurrencyRates
-
-from forex_python.converter import CurrencyRates
-
-c = CurrencyRates()
-try:
-    rate = c.get_rate('USD', 'EUR')
-    print(f"Exchange rate from USD to EUR: {rate}")
-    rate_gbp = c.get_rate('USD', 'GBP')
-    print(f"Exchange rate from USD to GBP: {rate_gbp}")
-except Exception as e:
-    print(f"Error fetching exchange rate: {e}")
-
+def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
+    c = CurrencyRates()
+    attempt = 0
+    while attempt < retries:
+        try:
+            rate = c.get_rate(base_currency, target_currency)
+            return rate
+        except Exception as e:
+            st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
+            attempt += 1
+            time.sleep(delay)
+    st.error(f"Failed to fetch exchange rate after {retries} attempts.")
+    return None
 
 
 
