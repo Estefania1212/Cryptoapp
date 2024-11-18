@@ -18,7 +18,7 @@ def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, de
     attempt = 0
     api_url = f"https://www.freeforexapi.com/api/live"
     params = {
-        'pairs': f"{base_currency}{target_currency}"
+        'pairs': f"{base_currency}{target_currency}"  # Ensure it's like USDGBP, not USD-GBP
     }
     
     # Try fetching exchange rate with retries
@@ -27,6 +27,9 @@ def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, de
             # Send request to Free Forex API
             response = requests.get(api_url, params=params)
             data = response.json()
+            
+            # Log the full response to see what the API returns
+            st.write("API Response:", data)
             
             # Check if the request was successful
             if response.status_code == 200 and data.get('response') and data['response'].get('status') == 'success':
@@ -166,4 +169,5 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
