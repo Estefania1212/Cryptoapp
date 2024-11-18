@@ -19,23 +19,20 @@ from forex_python.converter import CurrencyRates
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
-import yfinance as yf  # Ensure you import yfinance
+import yfinance as yf
 
-# Fetch cryptocurrency data from Yahoo Finance
 def load_data(currency):
     symbols = [
         "BTC-USD", "ETH-USD", "XRP-USD", "LTC-USD", "BCH-USD", 
         "ADA-USD", "DOGE-USD", "DOT1-USD", "LINK-USD", "XLM-USD",
         "UNI3-USD", "AAVE-USD", "VET-USD", "ATOM1-USD", "XMR-USD",
         "TRX-USD", "EOS-USD", "FIL-USD", "XTZ-USD", "SOL1-USD"
-    ]  # Add more symbols as needed
+    ]
     data = yf.download(symbols, start="2020-01-01", end=pd.Timestamp.today())
 
-    # Filter necessary columns
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
 
-    # Convert prices to the desired currency
     c = CurrencyRates()
     for symbol in symbols:
         try:
@@ -43,9 +40,15 @@ def load_data(currency):
             df[symbol] = df[symbol] * rate
         except Exception as e:
             st.warning(f"Error fetching rate for {symbol} with currency {currency}: {e}")
-            # Optionally, you can set the value to NaN or keep the original value if conversion fails
-            df[symbol] = df[symbol]  # This will just keep the original USD values if conversion fails
-
+            # Debugging: print the raw response
+            try:
+                response = c.get_rate("USD", currency)
+                print(f"Raw response for {currency}: {response}")
+            except Exception as api_error:
+                print(f"Error while fetching response for {currency}: {api_error}")
+            # Keep original values if conversion fails
+            df[symbol] = df[symbol]  
+            
     return df
 
 
