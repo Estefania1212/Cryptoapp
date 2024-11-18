@@ -10,6 +10,19 @@ from forex_python.converter import CurrencyRates
 
 from forex_python.converter import CurrencyRates
 
+from forex_python.converter import CurrencyRates
+
+c = CurrencyRates()
+try:
+    rate = c.get_rate('USD', 'EUR')
+    print(f"Exchange rate from USD to EUR: {rate}")
+    rate_gbp = c.get_rate('USD', 'GBP')
+    print(f"Exchange rate from USD to GBP: {rate_gbp}")
+except Exception as e:
+    print(f"Error fetching exchange rate: {e}")
+
+
+
 
 
 
