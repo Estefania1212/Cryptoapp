@@ -4,17 +4,9 @@ from forex_python.converter import CurrencyRates
 import matplotlib.pyplot as plt
 import time
 import pandas as pd
-
-import streamlit as st
-from forex_python.converter import CurrencyRates
-
-
-
-from forex_python.converter import CurrencyRates
-import time
-import streamlit as st
 import requests
 
+# Function to fetch exchange rate with retries
 def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
     c = CurrencyRates()
     attempt = 0
@@ -43,10 +35,6 @@ def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, de
     st.error(f"Failed to fetch exchange rate after {retries} attempts.")
     return None
 
-
-
-
-
 # Function to load cryptocurrency data and convert to selected currency
 def load_data(currency):
     symbols = [
@@ -63,9 +51,10 @@ def load_data(currency):
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
 
-    # Fetch exchange rate with retries
+    # Fetch exchange rate with retries for the selected currency
     rate = get_exchange_rate_with_retries("USD", currency)
     if rate is None:
+        st.warning(f"Could not fetch rate for {currency}. Defaulting to 1 USD = 1 {currency}.")
         rate = 1  # Default to 1 if conversion fails
 
     # Convert prices to the desired currency
@@ -168,4 +157,3 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
-
