@@ -36,21 +36,12 @@ def load_data():
     
     # Download data from Yahoo Finance
     data = yf.download(symbols, start="2020-01-01", end=pd.Timestamp.today())
-
     # Extract adjusted close prices
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
 
     # Sort the data in descending order (latest date first)
     df = df.sort_values(by="Date", ascending=False).reset_index(drop=True)
-
-
-    # Extract adjusted close prices
-    #df = data["Adj Close"].reset_index()
-    #df = df.rename(columns={"index": "Date"})
-    
-
-
     return df
 
 # Portfolio management functionality
