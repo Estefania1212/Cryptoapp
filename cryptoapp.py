@@ -16,6 +16,13 @@ from forex_python.converter import CurrencyRates
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
+import streamlit as st
+from pycoingecko import CoinGeckoAPI
+from forex_python.converter import CurrencyRates, RatesNotAvailableError
+
+# Initialize CoinGecko API client
+cg = CoinGeckoAPI()
+
 # Initialize CurrencyRates object from forex-python
 currency_rates = CurrencyRates()
 
@@ -25,23 +32,29 @@ def get_exchange_rate(base_currency, target_currency):
     if base_currency.lower() == "usd" and target_currency.lower() == "usd":
         return 1
 
-    # If base currency or target currency is USD, return the exchange rate using forex-python (for fiat currencies)
+    # If base currency or target currency is USD, use forex-python (for fiat currencies)
     if base_currency.lower() == "usd" or target_currency.lower() == "usd":
         try:
+            # Get exchange rate using forex-python (fiat currencies)
             rate = currency_rates.get_rate(base_currency, target_currency)
             return rate
+        except RatesNotAvailableError as e:
+            st.warning(f"Error fetching exchange rate for {base_currency} to {target_currency}: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+            return 1
         except Exception as e:
-            st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+            st.warning(f"Unexpected error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
             return 1
 
     # Otherwise, use CoinGecko API for cryptocurrency exchange rates
     try:
         rates = cg.get_exchange_rates()
+        # Print the response for debugging
+        st.write("Rates response:", rates)
         base_rate = rates["rates"].get(base_currency.lower(), {}).get("value", 1)
         target_rate = rates["rates"].get(target_currency.lower(), {}).get("value", 1)
         return target_rate / base_rate
     except Exception as e:
-        st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+        st.warning(f"Error fetching exchange rate from CoinGecko: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
         return 1
 
 
