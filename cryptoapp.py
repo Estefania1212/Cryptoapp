@@ -34,9 +34,9 @@ def load_data():
         "TRX-USD", "EOS-USD", "FIL-USD", "XTZ-USD", "SOL1-USD"
     ]
     
-  # Download data from Yahoo Finance starting from 2023
-    data = yf.download(symbols, start="2023-01-01", end=pd.to_datetime('today'))
-    
+  # Download data from Yahoo Finance
+    data = yf.download(symbols, start="2020-01-01", end=pd.Timestamp.today())
+
     # Extract adjusted close prices
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
