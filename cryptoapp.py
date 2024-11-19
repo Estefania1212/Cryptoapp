@@ -40,7 +40,17 @@ def load_data():
     # Extract adjusted close prices
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
+
+    # Sort the data in descending order (latest date first)
+    df = df.sort_values(by="Date", ascending=False).reset_index(drop=True)
+
+
+    # Extract adjusted close prices
+    #df = data["Adj Close"].reset_index()
+    #df = df.rename(columns={"index": "Date"})
     
+
+
     return df
 
 # Portfolio management functionality
