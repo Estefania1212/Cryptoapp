@@ -34,7 +34,7 @@ def load_data():
         "TRX-USD", "EOS-USD", "FIL-USD", "XTZ-USD", "SOL1-USD"
     ]
     
-  # Download data from Yahoo Finance
+    # Download data from Yahoo Finance
     data = yf.download(symbols, start="2020-01-01", end=pd.Timestamp.today())
 
     # Extract adjusted close prices
@@ -73,16 +73,21 @@ def portfolio_management(df, portfolio, currency):
             else:
                 st.sidebar.error("No holdings in portfolio for selling.")
 
-     # Calculate portfolio value
+    # Calculate portfolio value in selected currency
     st.sidebar.subheader("Portfolio Value")
     portfolio_value = 0
-    c = CurrencyRates()
+
+    # Convert prices to selected currency using CoinGecko if necessary
+    if currency != "USD":
+        exchange_rate = get_exchange_rate_coingecko("usd", currency)  # Use CoinGecko only for exchange rate
+    
     for coin in portfolio:
         for transaction in portfolio[coin]:
-            price_in_currency = transaction["Price"] * c.get_rate("USD", currency)
+            # If portfolio contains USD, calculate using CoinGecko rates
+            price_in_currency = transaction["Price"] * exchange_rate if currency != "USD" else transaction["Price"]
             portfolio_value += transaction["Quantity"] * price_in_currency
 
-    st.sidebar.info(f"Portfolio Value: {portfolio_value} {currency}")
+    st.sidebar.info(f"Portfolio Value: {portfolio_value:.2f} {currency}")
 
     return portfolio
 
@@ -138,6 +143,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
