@@ -1,19 +1,4 @@
-import yfinance as yf
-import streamlit as st
-import matplotlib.pyplot as plt
-import pandas as pd
-import time
-from pycoingecko import CoinGeckoAPI
 
-
-import yfinance as yf
-import streamlit as st
-import matplotlib.pyplot as plt
-import pandas as pd
-from pycoingecko import CoinGeckoAPI
-
-# Initialize CoinGecko API client
-cg = CoinGeckoAPI()
 
 import yfinance as yf
 import streamlit as st
