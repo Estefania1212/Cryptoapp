@@ -8,20 +8,41 @@ from pycoingecko import CoinGeckoAPI
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
-# Function to fetch exchange rate with retries
-def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
-    c = CurrencyRates()
-    attempt = 0
-    while attempt < retries:
+
+import streamlit as st
+from pycoingecko import CoinGeckoAPI
+from forex_python.converter import CurrencyRates
+
+# Initialize CoinGecko API client
+cg = CoinGeckoAPI()
+
+# Initialize CurrencyRates object from forex-python
+currency_rates = CurrencyRates()
+
+# Function to fetch exchange rate using CoinGecko for cryptocurrencies or forex-python for fiat currencies
+def get_exchange_rate(base_currency, target_currency):
+    # If the base and target currencies are both USD, return 1 since USD = USD by default
+    if base_currency.lower() == "usd" and target_currency.lower() == "usd":
+        return 1
+
+    # If base currency or target currency is USD, return the exchange rate using forex-python (for fiat currencies)
+    if base_currency.lower() == "usd" or target_currency.lower() == "usd":
         try:
-            rate = c.get_rate(base_currency, target_currency)
+            rate = currency_rates.get_rate(base_currency, target_currency)
             return rate
         except Exception as e:
-            attempt += 1
-            st.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay} seconds...")
-            time.sleep(delay)
-    st.error(f"Failed to fetch exchange rate after {retries} attempts.")
-    return None
+            st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+            return 1
+
+    # Otherwise, use CoinGecko API for cryptocurrency exchange rates
+    try:
+        rates = cg.get_exchange_rates()
+        base_rate = rates["rates"].get(base_currency.lower(), {}).get("value", 1)
+        target_rate = rates["rates"].get(target_currency.lower(), {}).get("value", 1)
+        return target_rate / base_rate
+    except Exception as e:
+        st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+        return 1
 
 
 # Function to load cryptocurrency data and convert to selected currency
