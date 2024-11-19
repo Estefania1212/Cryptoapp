@@ -6,6 +6,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pycoingecko import CoinGeckoAPI
 
+import yfinance as yf
+import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+from pycoingecko import CoinGeckoAPI
+
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
@@ -131,7 +137,11 @@ def main():
         portfolio[coin] = []
 
     # Add portfolio management functionality
-    portfolio = portfolio
+    portfolio = portfolio_management(df_display, portfolio, currency)
+
+# Run the Streamlit app
+if __name__ == "__main__":
+    main()
 
 
 
