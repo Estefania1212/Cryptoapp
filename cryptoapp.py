@@ -15,18 +15,36 @@ from forex_python.converter import CurrencyRates
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
+import yfinance as yf
+import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+from pycoingecko import CoinGeckoAPI
+from forex_python.converter import CurrencyRates
+
+# Initialize CoinGecko API client
+cg = CoinGeckoAPI()
+
 # Initialize CurrencyRates for Forex Python
 cr = CurrencyRates()
 
-# Function to get exchange rate for selected currency
-def get_exchange_rate(base_currency, target_currency):
-    if base_currency == target_currency:
-        return 1  # No conversion needed if base and target currency are the same
+# Function to get exchange rate for selected currency using CoinGecko
+def get_exchange_rate_coingecko(base_currency, target_currency):
+    try:
+        # Fetch exchange rates from CoinGecko
+        rates = cg.get_rates(base_currency.lower())
+        return rates.get(target_currency.lower(), 1)
+    except Exception as e:
+        st.warning(f"Error fetching exchange rate from CoinGecko: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+        return 1  # Default to 1 if there's an error
+
+# Function to get exchange rate for selected currency using Forex Python
+def get_exchange_rate_forex(base_currency, target_currency):
     try:
         rate = cr.get_rate(base_currency, target_currency)
         return rate
     except Exception as e:
-        st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+        st.warning(f"Error fetching exchange rate from Forex Python: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
         return 1  # Default to 1 if there's an error
 
 # Function to load cryptocurrency data
@@ -87,7 +105,7 @@ def portfolio_management(df, portfolio, currency):
     
     # Convert portfolio value to selected currency
     if currency != "USD":
-        exchange_rate = get_exchange_rate("USD", currency)
+        exchange_rate = get_exchange_rate_forex("USD", currency)  # You can switch to CoinGecko here
         portfolio_value *= exchange_rate
 
     st.sidebar.info(f"Portfolio Value: {portfolio_value:.2f} {currency}")
@@ -118,7 +136,7 @@ def main():
     st.subheader(f'Price Data of Selected Cryptocurrencies in {currency}')
     # Convert prices to selected currency
     if currency != "USD":
-        exchange_rate = get_exchange_rate("USD", currency)
+        exchange_rate = get_exchange_rate_forex("USD", currency)  # You can switch to CoinGecko here
         for col in df_display.columns[1:]:
             df_display[col] = df_display[col] * exchange_rate
     
@@ -146,6 +164,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
