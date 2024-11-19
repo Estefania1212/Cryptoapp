@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pycoingecko import CoinGeckoAPI
 
-# Initialize CoinGecko API client  
+# Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
 # Function to get exchange rate for selected currency using CoinGecko
@@ -18,13 +18,22 @@ def get_exchange_rate_coingecko(base_currency, target_currency):
         st.warning(f"Error fetching exchange rate from CoinGecko: {e}. Defaulting to 1 {base_currency} = 1 {target_currency}.")
         return 1  # Default to 1 if there's an error
 
-# Function to load cryptocurrency data
+# Function to load cryptocurrency data from Yahoo Finance
 def load_data():
     symbols = ["BTC-USD", "ETH-USD", "XRP-USD", "ADA-USD", "DOGE-USD", "SOL-USD"]
     data = yf.download(symbols, start="2022-01-01", end=pd.Timestamp.today())
     df = data["Adj Close"].reset_index()
     df["Date"] = pd.to_datetime(df["Date"]).dt.tz_localize(None)
     return df
+
+# Function to get news for selected cryptocurrencies
+def get_news():
+    try:
+        news_data = cg.get_news(ids="bitcoin,ethereum,ripple,cardano,dogecoin,solana", category="general")
+        return news_data
+    except Exception as e:
+        st.warning(f"Error fetching news from CoinGecko: {e}.")
+        return []
 
 # Streamlit app
 def main():
@@ -72,9 +81,36 @@ def main():
     plt.legend()
     st.pyplot(plt)
 
+    # Market News Section
+    st.subheader("Latest Cryptocurrency News")
+    news = get_news()
+    if news:
+        for article in news[:5]:  # Display top 5 news articles
+            st.write(f"**{article['title']}**")
+            st.write(f"[Read more]({article['url']})")
+            st.write(f"Source: {article['source']['name']}")
+            st.write(f"Published at: {article['published_at']}")
+            st.write("---")
+    else:
+        st.write("No news available at the moment.")
+
+    # Price Alerts Section
+    st.sidebar.subheader("Set Price Alert")
+    alert_coin = st.sidebar.selectbox("Select Cryptocurrency for Price Alert", selected_coin)
+    alert_price = st.sidebar.number_input(f"Set alert price for {alert_coin}", min_value=0.0)
+    
+    # Check price alert condition
+    if alert_price > 0:
+        latest_price = df_display[alert_coin].iloc[0]
+        if latest_price >= alert_price:
+            st.sidebar.success(f"Alert! {alert_coin} price is above {alert_price} {currency}. Current price: {latest_price:.2f} {currency}.")
+        else:
+            st.sidebar.info(f"Current {alert_coin} price is {latest_price:.2f} {currency}. Keep an eye on it.")
+
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
