@@ -110,31 +110,34 @@ def main():
     sorted_coin = sorted(df.columns[1:])
     selected_coin = st.sidebar.multiselect('Cryptocurrency', sorted_coin, sorted_coin)
     df_selected_coin = df[["Date"] + selected_coin]
+# Sidebar - Number of data points to display
+num_data_points = st.sidebar.slider('Display N Data Points', 10, len(df), 100)
+df_display = df_selected_coin.tail(num_data_points)
 
-    # Sidebar - Number of data points to display
-    num_data_points = st.sidebar.slider('Display N Data Points', 10, len(df), 100)
-    df_display = df_selected_coin.tail(num_data_points)
+# Reverse the order so that the most recent date is first
+df_display = df_display[::-1].reset_index(drop=True)
 
-    # Convert prices to selected currency if it's not USD
-    if currency != "USD":
-        exchange_rate = get_exchange_rate_coingecko("usd", currency)  # Use CoinGecko only for exchange rate
-        for col in df_display.columns[1:]:
-            df_display[col] = df_display[col] * exchange_rate
-    
-    # Display price data of selected cryptocurrencies
-    st.subheader(f'Price Data of Selected Cryptocurrencies in {currency}')
-    st.dataframe(df_display.set_index("Date"))
+# Convert prices to selected currency if it's not USD
+if currency != "USD":
+    exchange_rate = get_exchange_rate_coingecko("usd", currency)  # Use CoinGecko only for exchange rate
+    for col in df_display.columns[1:]:
+        df_display[col] = df_display[col] * exchange_rate
 
-    # Line plot of price data
-    st.subheader(f'Line Plot of Price Data in {currency}')
-    plt.figure(figsize=(10, 6))
-    for column in df_display.columns[1:]:
-        plt.plot(df_display["Date"], df_display[column], label=column)
-    plt.xlabel("Date")
-    plt.ylabel(f"Price ({currency})")
-    plt.title(f"Price Data of Selected Cryptocurrencies in {currency}")
-    plt.legend()
-    st.pyplot(plt)
+# Display price data of selected cryptocurrencies
+st.subheader(f'Price Data of Selected Cryptocurrencies in {currency}')
+st.dataframe(df_display.set_index("Date"))
+
+# Line plot of price data
+st.subheader(f'Line Plot of Price Data in {currency}')
+plt.figure(figsize=(10, 6))
+for column in df_display.columns[1:]:
+    plt.plot(df_display["Date"], df_display[column], label=column)
+plt.xlabel("Date")
+plt.ylabel(f"Price ({currency})")
+plt.title(f"Price Data of Selected Cryptocurrencies in {currency}")
+plt.legend()
+st.pyplot(plt)
+
 
     # Initialize portfolio
     portfolio = {}
