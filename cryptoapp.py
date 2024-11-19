@@ -10,6 +10,10 @@ cg = CoinGeckoAPI()
 
 # Function to fetch exchange rate using CoinGecko
 def get_exchange_rate(base_currency, target_currency):
+    # If base currency is USD, return 1 since USD = USD by default
+    if base_currency.lower() == "usd":
+        return 1
+
     try:
         rates = cg.get_exchange_rates()
         base_rate = rates["rates"].get(base_currency.lower(), {}).get("value", 1)
@@ -18,6 +22,7 @@ def get_exchange_rate(base_currency, target_currency):
     except Exception as e:
         st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
         return 1
+
 
 # Function to load cryptocurrency data and convert to selected currency
 def load_data(currency):
