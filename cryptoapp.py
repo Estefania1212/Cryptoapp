@@ -19,19 +19,16 @@ def get_exchange_rate_coingecko(base_currency, target_currency):
 
 # Function to load cryptocurrency data
 def load_data():
-    symbols = [
-        "BTC-USD", "ETH-USD", "XRP-USD", "LTC-USD", "BCH-USD", 
-        "ADA-USD", "DOGE-USD", "DOT1-USD", "LINK-USD", "XLM-USD",
-        "UNI3-USD", "AAVE-USD", "VET-USD", "ATOM1-USD", "XMR-USD",
-        "TRX-USD", "EOS-USD", "FIL-USD", "XTZ-USD", "SOL1-USD"
-    ]
+    symbols = ["BTC-USD", "ETH-USD", "XRP-USD", "ADA-USD", "DOGE-USD", "SOL-USD"]
     
     # Download data from Yahoo Finance
     data = yf.download(symbols, start="2020-01-01", end=pd.Timestamp.today())
 
     # Extract adjusted close prices
     df = data["Adj Close"].reset_index()
-    df = df.rename(columns={"index": "Date"})
+
+    # Ensure Date is timezone-naive
+    df["Date"] = pd.to_datetime(df["Date"]).dt.tz_localize(None)
 
     return df
 
@@ -70,12 +67,12 @@ def portfolio_management(df, portfolio, currency):
     portfolio_value = 0
 
     # Convert prices to selected currency using CoinGecko if necessary
+    exchange_rate = 1
     if currency != "USD":
-        exchange_rate = get_exchange_rate_coingecko("usd", currency)  # Use CoinGecko only for exchange rate
+        exchange_rate = get_exchange_rate_coingecko("usd", currency)
     
     for coin in portfolio:
         for transaction in portfolio[coin]:
-            # If portfolio contains USD, calculate using CoinGecko rates
             price_in_currency = transaction["Price"] * exchange_rate if currency != "USD" else transaction["Price"]
             portfolio_value += transaction["Quantity"] * price_in_currency
 
@@ -110,7 +107,7 @@ def main():
 
     # Convert prices to selected currency if it's not USD
     if currency != "USD":
-        exchange_rate = get_exchange_rate_coingecko("usd", currency)  # Use CoinGecko only for exchange rate
+        exchange_rate = get_exchange_rate_coingecko("usd", currency)
         for col in df_display.columns[1:]:
             df_display[col] = df_display[col] * exchange_rate
 
@@ -140,6 +137,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
