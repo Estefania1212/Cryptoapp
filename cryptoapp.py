@@ -73,20 +73,16 @@ def portfolio_management(df, portfolio, currency):
             else:
                 st.sidebar.error("No holdings in portfolio for selling.")
 
-    # Calculate portfolio value
+     # Calculate portfolio value
     st.sidebar.subheader("Portfolio Value")
     portfolio_value = 0
+    c = CurrencyRates()
     for coin in portfolio:
         for transaction in portfolio[coin]:
-            # Convert portfolio value based on selected currency
-            portfolio_value += transaction["Quantity"] * transaction["Price"]
-    
-    # Convert portfolio value to selected currency
-    if currency != "USD":
-        exchange_rate = get_exchange_rate_coingecko("usd", currency)  # Only use CoinGecko for exchange rate
-        portfolio_value *= exchange_rate
+            price_in_currency = transaction["Price"] * c.get_rate("USD", currency)
+            portfolio_value += transaction["Quantity"] * price_in_currency
 
-    st.sidebar.info(f"Portfolio Value: {portfolio_value:.2f} {currency}")
+    st.sidebar.info(f"Portfolio Value: {portfolio_value} {currency}")
 
     return portfolio
 
