@@ -26,15 +26,6 @@ def load_data():
     df["Date"] = pd.to_datetime(df["Date"]).dt.tz_localize(None)
     return df
 
-# Function to get news for selected cryptocurrencies
-def get_news():
-    try:
-        news_data = cg.get_news(ids="bitcoin,ethereum,ripple,cardano,dogecoin,solana", category="general")
-        return news_data
-    except Exception as e:
-        st.warning(f"Error fetching news from CoinGecko: {e}.")
-        return []
-
 # Streamlit app
 def main():
     st.title("Cryptocurrency Price Data")
@@ -81,19 +72,6 @@ def main():
     plt.legend()
     st.pyplot(plt)
 
-    # Market News Section
-    st.subheader("Latest Cryptocurrency News")
-    news = get_news()
-    if news:
-        for article in news[:5]:  # Display top 5 news articles
-            st.write(f"**{article['title']}**")
-            st.write(f"[Read more]({article['url']})")
-            st.write(f"Source: {article['source']['name']}")
-            st.write(f"Published at: {article['published_at']}")
-            st.write("---")
-    else:
-        st.write("No news available at the moment.")
-
     # Price Alerts Section
     st.sidebar.subheader("Set Price Alert")
     alert_coin = st.sidebar.selectbox("Select Cryptocurrency for Price Alert", selected_coin)
@@ -110,6 +88,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
