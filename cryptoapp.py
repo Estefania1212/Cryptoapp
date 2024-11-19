@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pycoingecko import CoinGeckoAPI
 
-# Initialize CoinGecko API client
+# Initialize CoinGecko API client  
 cg = CoinGeckoAPI()
 
 # Function to get exchange rate for selected currency using CoinGecko
@@ -108,8 +108,11 @@ def main():
     # Convert prices to selected currency if it's not USD
     if currency != "USD":
         exchange_rate = get_exchange_rate_coingecko("usd", currency)
-        for col in df_display.columns[1:]:
-            df_display[col] = df_display[col] * exchange_rate
+        if exchange_rate != 1:  # Ensure a valid exchange rate is applied
+            for col in df_display.columns[1:]:
+                df_display[col] = df_display[col] * exchange_rate
+    else:
+        exchange_rate = 1  # Default to no conversion for USD
 
     # Display price data of selected cryptocurrencies
     st.subheader(f'Price Data of Selected Cryptocurrencies in {currency}')
@@ -137,6 +140,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
