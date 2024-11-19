@@ -25,6 +25,16 @@ from forex_python.converter import CurrencyRates
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
+import yfinance as yf
+import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+from pycoingecko import CoinGeckoAPI
+from forex_python.converter import CurrencyRates
+
+# Initialize CoinGecko API client
+cg = CoinGeckoAPI()
+
 # Initialize CurrencyRates for Forex Python
 cr = CurrencyRates()
 
@@ -132,14 +142,14 @@ def main():
     num_data_points = st.sidebar.slider('Display N Data Points', 10, len(df), 100)
     df_display = df_selected_coin.tail(num_data_points)
 
-    # Display price data of selected cryptocurrencies
-    st.subheader(f'Price Data of Selected Cryptocurrencies in {currency}')
-    # Convert prices to selected currency
+    # Convert prices to selected currency if it's not USD
     if currency != "USD":
         exchange_rate = get_exchange_rate_forex("USD", currency)  # You can switch to CoinGecko here
         for col in df_display.columns[1:]:
             df_display[col] = df_display[col] * exchange_rate
     
+    # Display price data of selected cryptocurrencies
+    st.subheader(f'Price Data of Selected Cryptocurrencies in {currency}')
     st.dataframe(df_display.set_index("Date"))
 
     # Line plot of price data
@@ -164,6 +174,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
