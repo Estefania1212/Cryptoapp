@@ -10,11 +10,26 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
 from pycoingecko import CoinGeckoAPI
+from forex_python.converter import CurrencyRates
 
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
-# Function to load cryptocurrency data and convert to selected currency
+# Initialize CurrencyRates for Forex Python
+cr = CurrencyRates()
+
+# Function to get exchange rate for selected currency
+def get_exchange_rate(base_currency, target_currency):
+    if base_currency == target_currency:
+        return 1  # No conversion needed if base and target currency are the same
+    try:
+        rate = cr.get_rate(base_currency, target_currency)
+        return rate
+    except Exception as e:
+        st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+        return 1  # Default to 1 if there's an error
+
+# Function to load cryptocurrency data
 def load_data():
     symbols = [
         "BTC-USD", "ETH-USD", "XRP-USD", "LTC-USD", "BCH-USD", 
@@ -33,7 +48,7 @@ def load_data():
     return df
 
 # Portfolio management functionality
-def portfolio_management(df, portfolio):
+def portfolio_management(df, portfolio, currency):
     st.sidebar.subheader("Portfolio Management")
 
     # Add transaction
@@ -67,9 +82,15 @@ def portfolio_management(df, portfolio):
     portfolio_value = 0
     for coin in portfolio:
         for transaction in portfolio[coin]:
+            # Convert portfolio value based on selected currency
             portfolio_value += transaction["Quantity"] * transaction["Price"]
+    
+    # Convert portfolio value to selected currency
+    if currency != "USD":
+        exchange_rate = get_exchange_rate("USD", currency)
+        portfolio_value *= exchange_rate
 
-    st.sidebar.info(f"Portfolio Value: {portfolio_value} USD")  # Assuming values are in USD
+    st.sidebar.info(f"Portfolio Value: {portfolio_value:.2f} {currency}")
 
     return portfolio
 
@@ -78,7 +99,10 @@ def main():
     st.title("Cryptocurrency Price Data")
     st.sidebar.header("Inputs")
 
-    # Load cryptocurrency data without any currency conversion
+    # Currency selection
+    currency = st.sidebar.selectbox('Currency', ['USD', 'EUR', 'GBP'])
+
+    # Load cryptocurrency data
     df = load_data()
 
     # Sidebar - Cryptocurrency selections
@@ -91,17 +115,23 @@ def main():
     df_display = df_selected_coin.tail(num_data_points)
 
     # Display price data of selected cryptocurrencies
-    st.subheader('Price Data of Selected Cryptocurrencies')
+    st.subheader(f'Price Data of Selected Cryptocurrencies in {currency}')
+    # Convert prices to selected currency
+    if currency != "USD":
+        exchange_rate = get_exchange_rate("USD", currency)
+        for col in df_display.columns[1:]:
+            df_display[col] = df_display[col] * exchange_rate
+    
     st.dataframe(df_display.set_index("Date"))
 
     # Line plot of price data
-    st.subheader('Line Plot of Price Data')
+    st.subheader(f'Line Plot of Price Data in {currency}')
     plt.figure(figsize=(10, 6))
     for column in df_display.columns[1:]:
         plt.plot(df_display["Date"], df_display[column], label=column)
     plt.xlabel("Date")
-    plt.ylabel("Price (USD)")  # Assuming all data is in USD, you can adjust if needed
-    plt.title("Price Data of Selected Cryptocurrencies")
+    plt.ylabel(f"Price ({currency})")
+    plt.title(f"Price Data of Selected Cryptocurrencies in {currency}")
     plt.legend()
     st.pyplot(plt)
 
@@ -111,11 +141,12 @@ def main():
         portfolio[coin] = []
 
     # Add portfolio management functionality
-    portfolio = portfolio_management(df_display, portfolio)
+    portfolio = portfolio_management(df_display, portfolio, currency)
 
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
