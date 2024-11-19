@@ -5,7 +5,11 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
 from pycoingecko import CoinGeckoAPI
-
+import yfinance as yf
+import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+from pycoingecko import CoinGeckoAPI
 import yfinance as yf
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -143,6 +147,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
