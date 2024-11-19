@@ -1,43 +1,23 @@
 import yfinance as yf
 import streamlit as st
-from forex_python.converter import CurrencyRates
 import matplotlib.pyplot as plt
-import time
 import pandas as pd
-import requests
-
-
-import yfinance as yf
-import streamlit as st
-import matplotlib.pyplot as plt
 import time
-import pandas as pd
-from forex_python.converter import CurrencyRates
+from pycoingecko import CoinGeckoAPI
 
-# Initialize CurrencyRates object
-currency_rates = CurrencyRates()
+# Initialize CoinGecko API client
+cg = CoinGeckoAPI()
 
-# Function to fetch exchange rate using forex-python
-def get_exchange_rate_with_retries(base_currency, target_currency, retries=3, delay=5):
-    attempt = 0
-    
-    # Try fetching exchange rate with retries
-    while attempt < retries:
-        try:
-            rate = currency_rates.get_rate(base_currency, target_currency)
-            return rate
-        except Exception as e:
-            # Handle exceptions, display a warning, and retry
-            attempt += 1
-            error_message = str(e)
-            st.warning(f"Error fetching exchange rate (Attempt {attempt}): {error_message}. Retrying in {delay} seconds...")
-        
-        # Wait before retrying
-        time.sleep(delay)
-
-    # If the function fails after all retries, log an error and return a fallback rate (1)
-    st.error(f"Failed to fetch exchange rate after {retries} attempts. Defaulting to 1 {target_currency} = 1 {base_currency}.")
-    return 1  # Default to 1 if fetching fails (you can set this to another default value if needed)
+# Function to fetch exchange rate using CoinGecko
+def get_exchange_rate(base_currency, target_currency):
+    try:
+        rates = cg.get_exchange_rates()
+        base_rate = rates["rates"].get(base_currency.lower(), {}).get("value", 1)
+        target_rate = rates["rates"].get(target_currency.lower(), {}).get("value", 1)
+        return target_rate / base_rate
+    except Exception as e:
+        st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
+        return 1
 
 # Function to load cryptocurrency data and convert to selected currency
 def load_data(currency):
@@ -55,8 +35,8 @@ def load_data(currency):
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
 
-    # Fetch exchange rate with retries for the selected currency
-    rate = get_exchange_rate_with_retries("USD", currency)
+    # Fetch exchange rate for the selected currency
+    rate = get_exchange_rate("usd", currency)
     if rate == 1:
         st.warning(f"Could not fetch rate for {currency}. Defaulting to 1 USD = 1 {currency}.")
     
@@ -70,7 +50,7 @@ def load_data(currency):
             
     return df
 
-# Portfolio management functionality (unchanged)
+# Portfolio management functionality
 def portfolio_management(df, portfolio, currency):
     st.sidebar.subheader("Portfolio Management")
 
@@ -105,14 +85,14 @@ def portfolio_management(df, portfolio, currency):
     portfolio_value = 0
     for coin in portfolio:
         for transaction in portfolio[coin]:
-            price_in_currency = transaction["Price"] * get_exchange_rate_with_retries("USD", currency)
+            price_in_currency = transaction["Price"] * get_exchange_rate("usd", currency)
             portfolio_value += transaction["Quantity"] * price_in_currency
 
     st.sidebar.info(f"Portfolio Value: {portfolio_value} {currency}")
 
     return portfolio
 
-# Streamlit app (unchanged)
+# Streamlit app
 def main():
     st.title("Cryptocurrency Price Data")
     st.sidebar.header("Inputs")
@@ -158,6 +138,8 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
+
 
 
 
