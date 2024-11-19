@@ -15,12 +15,21 @@ from pycoingecko import CoinGeckoAPI
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
+import yfinance as yf
+import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+from pycoingecko import CoinGeckoAPI
+
+# Initialize CoinGecko API client
+cg = CoinGeckoAPI()
+
 # Function to get exchange rate for selected currency using CoinGecko
 def get_exchange_rate_coingecko(base_currency, target_currency):
     try:
-        # Fetch exchange rates from CoinGecko
-        rates = cg.get_rates(base_currency.lower())
-        return rates.get(target_currency.lower(), 1)
+        # Fetch exchange rate from CoinGecko between USD and the selected currency
+        rates = cg.get_price(ids=target_currency.lower(), vs_currencies=base_currency.lower())
+        return rates.get(target_currency.lower(), {}).get(base_currency.lower(), 1)
     except Exception as e:
         st.warning(f"Error fetching exchange rate from CoinGecko: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
         return 1  # Default to 1 if there's an error
@@ -137,11 +146,8 @@ def main():
         portfolio[coin] = []
 
     # Add portfolio management functionality
-    portfolio = portfolio_management(df_display, portfolio, currency)
+    portfolio = portfolio
 
-# Run the Streamlit app
-if __name__ == "__main__":
-    main()
 
 
 
