@@ -5,40 +5,17 @@ import pandas as pd
 import time
 from pycoingecko import CoinGeckoAPI
 
-# Initialize CoinGecko API client
-cg = CoinGeckoAPI()
-
-
+import yfinance as yf
 import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
 from pycoingecko import CoinGeckoAPI
-from forex_python.converter import CurrencyRates
 
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
-
-import streamlit as st
-from pycoingecko import CoinGeckoAPI
-from forex_python.converter import CurrencyRates, RatesNotAvailableError
-
-# Initialize CoinGecko API client
-cg = CoinGeckoAPI()
-
-# Function to fetch exchange rate using CoinGecko
-def get_exchange_rate(base_currency, target_currency):
-    try:
-        rates = cg.get_exchange_rates()
-        base_rate = rates["rates"].get(base_currency.lower(), {}).get("value", 1)
-        target_rate = rates["rates"].get(target_currency.lower(), {}).get("value", 1)
-        return target_rate / base_rate
-    except Exception as e:
-        st.warning(f"Error fetching exchange rate: {e}. Defaulting to 1 {target_currency} = 1 {base_currency}.")
-        return 1
-
-
-
 
 # Function to load cryptocurrency data and convert to selected currency
-def load_data(currency):
+def load_data():
     symbols = [
         "BTC-USD", "ETH-USD", "XRP-USD", "LTC-USD", "BCH-USD", 
         "ADA-USD", "DOGE-USD", "DOT1-USD", "LINK-USD", "XLM-USD",
@@ -52,24 +29,11 @@ def load_data(currency):
     # Extract adjusted close prices
     df = data["Adj Close"].reset_index()
     df = df.rename(columns={"index": "Date"})
-
-    # Fetch exchange rate for the selected currency
-    rate = get_exchange_rate("usd", currency)
-    if rate == 1:
-        st.warning(f"Could not fetch rate for {currency}. Defaulting to 1 USD = 1 {currency}.")
     
-    # Convert prices to the desired currency
-    for symbol in symbols:
-        try:
-            df[symbol] = df[symbol] * rate
-        except Exception as e:
-            st.warning(f"Error converting {symbol} to {currency}: {e}")
-            df[symbol] = df[symbol]  # Keep original values if conversion fails
-            
     return df
 
 # Portfolio management functionality
-def portfolio_management(df, portfolio, currency):
+def portfolio_management(df, portfolio):
     st.sidebar.subheader("Portfolio Management")
 
     # Add transaction
@@ -103,10 +67,9 @@ def portfolio_management(df, portfolio, currency):
     portfolio_value = 0
     for coin in portfolio:
         for transaction in portfolio[coin]:
-            price_in_currency = transaction["Price"] * get_exchange_rate("usd", currency)
-            portfolio_value += transaction["Quantity"] * price_in_currency
+            portfolio_value += transaction["Quantity"] * transaction["Price"]
 
-    st.sidebar.info(f"Portfolio Value: {portfolio_value} {currency}")
+    st.sidebar.info(f"Portfolio Value: {portfolio_value} USD")  # Assuming values are in USD
 
     return portfolio
 
@@ -115,11 +78,8 @@ def main():
     st.title("Cryptocurrency Price Data")
     st.sidebar.header("Inputs")
 
-    # Currency selection
-    currency = st.sidebar.selectbox('Currency', ['USD', 'EUR', 'GBP'])  # Add more currencies as needed
-
-    # Load cryptocurrency data
-    df = load_data(currency)
+    # Load cryptocurrency data without any currency conversion
+    df = load_data()
 
     # Sidebar - Cryptocurrency selections
     sorted_coin = sorted(df.columns[1:])
@@ -140,7 +100,7 @@ def main():
     for column in df_display.columns[1:]:
         plt.plot(df_display["Date"], df_display[column], label=column)
     plt.xlabel("Date")
-    plt.ylabel(f"Price ({currency})")
+    plt.ylabel("Price (USD)")  # Assuming all data is in USD, you can adjust if needed
     plt.title("Price Data of Selected Cryptocurrencies")
     plt.legend()
     st.pyplot(plt)
@@ -151,11 +111,12 @@ def main():
         portfolio[coin] = []
 
     # Add portfolio management functionality
-    portfolio = portfolio_management(df_display, portfolio, currency)
+    portfolio = portfolio_management(df_display, portfolio)
 
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
