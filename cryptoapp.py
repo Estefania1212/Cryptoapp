@@ -24,11 +24,13 @@ def load_real_time_data(currency):
     # Fetch real-time prices
     prices = get_real_time_prices(currency)
     
-    # Convert to DataFrame
+    # Extract cryptocurrency prices from the returned dictionary
     if prices:
-        df = pd.DataFrame(prices).T.reset_index()
-        df.columns = ["Cryptocurrency", "Price"]
-        df["Date"] = pd.Timestamp.now()  # Add current timestamp
+        # Convert the dictionary to a DataFrame
+        df = pd.DataFrame.from_dict(prices, orient='index', columns=[currency.lower()])
+        df['Cryptocurrency'] = df.index
+        df = df.reset_index(drop=True)
+        df['Date'] = pd.Timestamp.now()  # Add current timestamp
         return df
     else:
         return pd.DataFrame(columns=["Cryptocurrency", "Price", "Date"])
@@ -54,7 +56,7 @@ def main():
     # Bar chart of price data
     st.subheader(f'Price Visualization in {currency}')
     plt.figure(figsize=(10, 6))
-    plt.bar(df["Cryptocurrency"], df["Price"], color='skyblue')
+    plt.bar(df["Cryptocurrency"], df[currency.lower()], color='skyblue')
     plt.xlabel("Cryptocurrency")
     plt.ylabel(f"Price ({currency})")
     plt.title(f"Real-Time Prices in {currency}")
@@ -67,7 +69,7 @@ def main():
 
     # Check price alert condition
     if alert_price > 0:
-        latest_price = df[df["Cryptocurrency"] == alert_coin]["Price"].iloc[0]
+        latest_price = df[df["Cryptocurrency"] == alert_coin][currency.lower()].iloc[0]
         if latest_price >= alert_price:
             st.sidebar.success(f"Alert! {alert_coin} price is above {alert_price} {currency}. Current price: {latest_price:.2f} {currency}.")
         else:
@@ -76,6 +78,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
