@@ -9,6 +9,7 @@ cg = CoinGeckoAPI()
 # Function to get real-time cryptocurrency prices from CoinGecko
 def get_real_time_prices(currency):
     try:
+        # Get the prices for selected cryptocurrencies
         prices = cg.get_price(
             ids=['bitcoin', 'ethereum', 'ripple', 'cardano', 'dogecoin', 'solana'],
             vs_currencies=[currency.lower()]
@@ -24,12 +25,23 @@ def load_real_time_data(currency):
     # Fetch real-time prices
     prices = get_real_time_prices(currency)
     
-    # Extract cryptocurrency prices from the returned dictionary
+    # Extract data if available
     if prices:
-        # Convert the dictionary to a DataFrame
-        df = pd.DataFrame.from_dict(prices, orient='index', columns=[currency.lower()])
-        df['Cryptocurrency'] = df.index
-        df = df.reset_index(drop=True)
+        # Create lists to hold cryptocurrency names and their prices
+        cryptos = []
+        price_values = []
+        
+        # Extract cryptocurrency names and corresponding prices
+        for crypto, price_data in prices.items():
+            cryptos.append(crypto.capitalize())  # Format the crypto name
+            price_values.append(price_data[currency.lower()])  # Get the price for the selected currency
+        
+        # Create DataFrame from the lists
+        df = pd.DataFrame({
+            'Cryptocurrency': cryptos,
+            'Price': price_values
+        })
+        
         df['Date'] = pd.Timestamp.now()  # Add current timestamp
         return df
     else:
@@ -56,7 +68,7 @@ def main():
     # Bar chart of price data
     st.subheader(f'Price Visualization in {currency}')
     plt.figure(figsize=(10, 6))
-    plt.bar(df["Cryptocurrency"], df[currency.lower()], color='skyblue')
+    plt.bar(df["Cryptocurrency"], df["Price"], color='skyblue')
     plt.xlabel("Cryptocurrency")
     plt.ylabel(f"Price ({currency})")
     plt.title(f"Real-Time Prices in {currency}")
@@ -69,7 +81,7 @@ def main():
 
     # Check price alert condition
     if alert_price > 0:
-        latest_price = df[df["Cryptocurrency"] == alert_coin][currency.lower()].iloc[0]
+        latest_price = df[df["Cryptocurrency"] == alert_coin]["Price"].iloc[0]
         if latest_price >= alert_price:
             st.sidebar.success(f"Alert! {alert_coin} price is above {alert_price} {currency}. Current price: {latest_price:.2f} {currency}.")
         else:
