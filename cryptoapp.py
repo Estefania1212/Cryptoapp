@@ -1,3 +1,4 @@
+import yfinance as yf
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -6,68 +7,79 @@ from pycoingecko import CoinGeckoAPI
 # Initialize CoinGecko API client
 cg = CoinGeckoAPI()
 
-# Function to get real-time cryptocurrency prices from CoinGecko
-def get_real_time_prices(currency):
+# Function to get exchange rate for selected currency using CoinGecko
+def get_exchange_rate_coingecko(base_currency, target_currency):
     try:
-        prices = cg.get_price(
-            ids=['bitcoin', 'ethereum', 'ripple', 'cardano', 'dogecoin', 'solana'],
-            vs_currencies=[currency.lower()]
-        )
-        st.write(f"Real-time prices in {currency}:", prices)  # Debugging output
-        return prices
+        rates = cg.get_exchange_rates()
+        base_rate = rates["rates"][base_currency.lower()]["value"]
+        target_rate = rates["rates"][target_currency.lower()]["value"]
+        return target_rate / base_rate
     except Exception as e:
-        st.warning(f"Error fetching real-time prices from CoinGecko: {e}")
-        return {}
+        st.warning(f"Error fetching exchange rate from CoinGecko: {e}. Defaulting to 1 {base_currency} = 1 {target_currency}.")
+        return 1  # Default to 1 if there's an error
 
-# Function to prepare the price data for display
-def load_real_time_data(currency):
-    # Fetch real-time prices
-    prices = get_real_time_prices(currency)
-    
-    # Convert to DataFrame
-    if prices:
-        df = pd.DataFrame(prices).T.reset_index()
-        df.columns = ["Cryptocurrency", "Price"]
-        df["Date"] = pd.Timestamp.now()  # Add current timestamp
-        return df
-    else:
-        return pd.DataFrame(columns=["Cryptocurrency", "Price", "Date"])
+# Function to load cryptocurrency data from Yahoo Finance
+def load_data():
+    symbols = ["BTC-USD", "ETH-USD", "XRP-USD", "ADA-USD", "DOGE-USD", "SOL-USD"]
+    data = yf.download(symbols, start="2022-01-01", end=pd.Timestamp.today())
+    df = data["Adj Close"].reset_index()
+    df["Date"] = pd.to_datetime(df["Date"]).dt.tz_localize(None)
+    return df
 
 # Streamlit app
 def main():
-    st.title("Real-Time Cryptocurrency Prices")
+    st.title("Cryptocurrency Price Data")
     st.sidebar.header("Inputs")
 
     # Currency selection
     currency = st.sidebar.selectbox('Currency', ['USD', 'EUR', 'GBP'])
 
-    # Load real-time cryptocurrency data
-    df = load_real_time_data(currency)
-    if df.empty:
-        st.error("No data available. Please try again later.")
-        st.stop()
+    # Load cryptocurrency data
+    df = load_data()
 
-    # Display price data
-    st.subheader(f'Real-Time Prices of Selected Cryptocurrencies in {currency}')
-    st.dataframe(df.set_index("Cryptocurrency"))
+    # Sidebar - Cryptocurrency selections
+    sorted_coin = sorted(df.columns[1:])
+    selected_coin = st.sidebar.multiselect('Cryptocurrency', sorted_coin, sorted_coin)
+    df_selected_coin = df[["Date"] + selected_coin]
 
-    # Bar chart of price data
-    st.subheader(f'Price Visualization in {currency}')
+    # Sidebar - Number of data points to display
+    num_data_points = st.sidebar.slider('Display N Data Points', 10, len(df), 100)
+
+    # Select the last 'num_data_points' rows from the dataframe
+    df_display = df_selected_coin.tail(num_data_points)
+
+    # Sort the data in descending order based on the 'Date' column
+    df_display = df_display.sort_values(by="Date", ascending=False).reset_index(drop=True)
+
+    # Convert prices to selected currency if it's not USD
+    if currency != "USD":
+        exchange_rate = get_exchange_rate_coingecko("usd", currency)
+        for col in df_display.columns[1:]:
+            df_display[col] = df_display[col] * exchange_rate
+
+    # Display price data of selected cryptocurrencies
+    st.subheader(f'Price Data of Selected Cryptocurrencies in {currency}')
+    st.dataframe(df_display.set_index("Date"))
+
+    # Line plot of price data
+    st.subheader(f'Line Plot of Price Data in {currency}')
     plt.figure(figsize=(10, 6))
-    plt.bar(df["Cryptocurrency"], df["Price"], color='skyblue')
-    plt.xlabel("Cryptocurrency")
+    for column in df_display.columns[1:]:
+        plt.plot(df_display["Date"], df_display[column], label=column)
+    plt.xlabel("Date")
     plt.ylabel(f"Price ({currency})")
-    plt.title(f"Real-Time Prices in {currency}")
+    plt.title(f"Price Data of Selected Cryptocurrencies in {currency}")
+    plt.legend()
     st.pyplot(plt)
 
     # Price Alerts Section
     st.sidebar.subheader("Set Price Alert")
-    alert_coin = st.sidebar.selectbox("Select Cryptocurrency for Price Alert", df["Cryptocurrency"])
-    alert_price = st.sidebar.number_input(f"Set alert price for {alert_coin} ({currency})", min_value=0.0)
-
+    alert_coin = st.sidebar.selectbox("Select Cryptocurrency for Price Alert", selected_coin)
+    alert_price = st.sidebar.number_input(f"Set alert price for {alert_coin}", min_value=0.0)
+    
     # Check price alert condition
     if alert_price > 0:
-        latest_price = df[df["Cryptocurrency"] == alert_coin]["Price"].iloc[0]
+        latest_price = df_display[alert_coin].iloc[0]
         if latest_price >= alert_price:
             st.sidebar.success(f"Alert! {alert_coin} price is above {alert_price} {currency}. Current price: {latest_price:.2f} {currency}.")
         else:
@@ -76,7 +88,6 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
-
 
 
 
