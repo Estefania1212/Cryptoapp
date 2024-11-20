@@ -1,4 +1,3 @@
-
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -10,13 +9,11 @@ cg = CoinGeckoAPI()
 # Function to get real-time cryptocurrency prices from CoinGecko
 def get_real_time_prices(currency):
     try:
-        # Get the prices for selected cryptocurrencies
         prices = cg.get_price(
             ids=['bitcoin', 'ethereum', 'ripple', 'cardano', 'dogecoin', 'solana'],
             vs_currencies=[currency.lower()]
         )
-        # Debugging: Print the structure of the fetched data
-        st.write("Fetched data structure from CoinGecko:", prices)  # Debugging output
+        st.write(f"Real-time prices in {currency}:", prices)  # Debugging output
         return prices
     except Exception as e:
         st.warning(f"Error fetching real-time prices from CoinGecko: {e}")
@@ -27,19 +24,11 @@ def load_real_time_data(currency):
     # Fetch real-time prices
     prices = get_real_time_prices(currency)
     
-    # Check if prices were fetched correctly
+    # Convert to DataFrame
     if prices:
-        # Create an empty list to hold the data
-        crypto_data = []
-        
-        # Iterate over the dictionary to extract the names and their prices
-        for crypto, price_info in prices.items():
-            price = price_info.get(currency.lower())  # Get the price for the selected currency
-            crypto_data.append([crypto.capitalize(), price])  # Add name and price to list
-        
-        # Convert the list to a DataFrame
-        df = pd.DataFrame(crypto_data, columns=["Cryptocurrency", "Price"])
-        df['Date'] = pd.Timestamp.now()  # Add current timestamp to the DataFrame
+        df = pd.DataFrame(prices).T.reset_index()
+        df.columns = ["Cryptocurrency", "Price"]
+        df["Date"] = pd.Timestamp.now()  # Add current timestamp
         return df
     else:
         return pd.DataFrame(columns=["Cryptocurrency", "Price", "Date"])
@@ -87,6 +76,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
