@@ -14,7 +14,8 @@ def get_real_time_prices(currency):
             ids=['bitcoin', 'ethereum', 'ripple', 'cardano', 'dogecoin', 'solana'],
             vs_currencies=[currency.lower()]
         )
-        st.write(f"Real-time prices in {currency}:", prices)  # Debugging output
+        # Debugging: Print the structure of the fetched data
+        st.write("Fetched data structure from CoinGecko:", prices)  # Debugging output
         return prices
     except Exception as e:
         st.warning(f"Error fetching real-time prices from CoinGecko: {e}")
@@ -85,6 +86,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
