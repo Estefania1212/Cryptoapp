@@ -25,24 +25,19 @@ def load_real_time_data(currency):
     # Fetch real-time prices
     prices = get_real_time_prices(currency)
     
-    # Extract data if available
+    # Check if prices were fetched correctly
     if prices:
-        # Create lists to hold cryptocurrency names and their prices
-        cryptos = []
-        price_values = []
+        # Create an empty list to hold the data
+        crypto_data = []
         
-        # Extract cryptocurrency names and corresponding prices
-        for crypto, price_data in prices.items():
-            cryptos.append(crypto.capitalize())  # Format the crypto name
-            price_values.append(price_data[currency.lower()])  # Get the price for the selected currency
+        # Iterate over the dictionary to extract the names and their prices
+        for crypto, price_info in prices.items():
+            price = price_info.get(currency.lower())  # Get the price for the selected currency
+            crypto_data.append([crypto.capitalize(), price])  # Add name and price to list
         
-        # Create DataFrame from the lists
-        df = pd.DataFrame({
-            'Cryptocurrency': cryptos,
-            'Price': price_values
-        })
-        
-        df['Date'] = pd.Timestamp.now()  # Add current timestamp
+        # Convert the list to a DataFrame
+        df = pd.DataFrame(crypto_data, columns=["Cryptocurrency", "Price"])
+        df['Date'] = pd.Timestamp.now()  # Add current timestamp to the DataFrame
         return df
     else:
         return pd.DataFrame(columns=["Cryptocurrency", "Price", "Date"])
@@ -90,6 +85,7 @@ def main():
 # Run the Streamlit app
 if __name__ == "__main__":
     main()
+
 
 
 
